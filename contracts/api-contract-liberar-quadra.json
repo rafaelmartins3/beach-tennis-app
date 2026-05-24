@@ -1,0 +1,57 @@
+{
+  "version": "1.0",
+  "feature": "liberar-quadra",
+  "bounded_context": "Reservas",
+  "domain": {
+    "comando": "LiberarQuadra",
+    "entrada": {
+      "reserva_id": "uuid"
+    },
+    "sucesso": "JanelaDePagamentoExpirada + QuadraLiberada",
+    "falhas": ["ReservaNãoEncontrada"],
+    "regras": [
+      "Executado automaticamente pelo sistema após 2h sem comprovante",
+      "Apenas reservas no status 'bloqueada' podem ser liberadas",
+      "Reservas já confirmadas não são afetadas",
+      "Após liberação, o slot volta a aparecer como disponível para todos os clientes"
+    ]
+  },
+  "ui_binding": {
+    "tela": "Tela 4 (cliente) + Painel Admin",
+    "componente_gatilho": "Sistema (automático — sem ação do usuário)",
+    "estados_ui": ["janela-expirada", "expirado", "disponível"],
+    "mapeamento": {
+      "JanelaDePagamentoExpirada": {
+        "estado_ui": "janela-expirada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useLiberarQuadra.ts"
+      },
+      "QuadraLiberada": {
+        "estado_ui": "disponivel",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useLiberarQuadra.ts"
+      },
+      "ReservaNãoEncontrada": {
+        "estado_ui": "reserva-nao-encontrada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useLiberarQuadra.ts"
+      }
+    }
+  },
+  "validation": {
+    "testes_obrigatorios": [
+      "caminho feliz: reserva bloqueada sem comprovante após 2h → JanelaDePagamentoExpirada + QuadraLiberada",
+      "caminho feliz: após liberação, slot aparece como disponível para novos clientes",
+      "falha: tentar liberar reserva inexistente → ReservaNãoEncontrada",
+      "borda: reserva já confirmada não é afetada pelo job de expiração",
+      "concorrência: cliente envia comprovante enquanto job de expiração tenta liberar — comprovante enviado dentro da janela prevalece"
+    ],
+    "sensores": [
+      "verificar que job de expiração roda a cada minuto (ou via trigger de banco)",
+      "verificar que status muda de 'bloqueada' para 'disponível' atomicamente",
+      "verificar que nenhuma reserva confirmada é liberada pelo job"
+    ],
+    "cobertura_minima": 80,
+    "aprovacao": "all tests pass + coverage >= 80%"
+  }
+}

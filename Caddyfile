@@ -1,0 +1,29 @@
+# Caddyfile — Beach Tennis Agendamento
+#
+# O Caddy emite e renova o certificado Let's Encrypt automaticamente.
+# Basta que a variável DOMAIN esteja definida no .env e o DNS
+# já aponte para o IP da VPS antes do primeiro deploy.
+
+{env.DOMAIN} {
+    # Proxy reverso para o container nginx
+    reverse_proxy app:80
+
+    # Logs estruturados (visíveis com: docker compose logs caddy)
+    log {
+        output stderr
+        format console
+        level INFO
+    }
+
+    # Cabeçalhos de segurança adicionais (HSTS, etc.)
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "SAMEORIGIN"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Compressão adicional na camada do Caddy
+    encode gzip
+}

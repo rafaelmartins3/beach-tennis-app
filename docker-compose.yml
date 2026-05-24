@@ -1,0 +1,44 @@
+services:
+  # ── Aplicação (nginx serve os arquivos estáticos) ─────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+    image: beach-tennis-app:latest
+    container_name: beach-tennis-app
+    restart: unless-stopped
+    # Sem exposição direta — o Caddy acessa internamente pela rede Docker
+    expose:
+      - "80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ── Caddy (HTTPS automático via Let's Encrypt) ────────────────────────────
+  caddy:
+    image: caddy:2-alpine
+    container_name: beach-tennis-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3 (QUIC)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data        # certificados TLS persistidos
+      - caddy_config:/config    # cache de config do Caddy
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      # Usado pelo Caddyfile via variável de ambiente
+      DOMAIN: ${DOMAIN}
+
+volumes:
+  caddy_data:
+  caddy_config:

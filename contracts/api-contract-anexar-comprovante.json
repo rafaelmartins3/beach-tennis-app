@@ -1,0 +1,92 @@
+{
+  "version": "1.0",
+  "feature": "anexar-comprovante",
+  "bounded_context": "Reservas",
+  "domain": {
+    "comando": "AnexarComprovante",
+    "entrada": {
+      "reserva_id": "uuid",
+      "arquivo": "binary",
+      "mime_type": "string"
+    },
+    "sucesso": "ComprovanteAnexado + ReservaConfirmada",
+    "falhas": [
+      "ReservaNãoEncontrada",
+      "JanelaExpirada",
+      "ArquivoInválido",
+      "ReservaJáConfirmada"
+    ],
+    "regras": [
+      "Formatos aceitos: image/jpeg, image/png, application/pdf",
+      "Tamanho máximo: 10 MB",
+      "Janela de pagamento deve estar ativa (menos de 2h desde ReservaIniciada)",
+      "Reserva deve existir e estar no status 'bloqueada'",
+      "Ao anexar com sucesso, a reserva é confirmada automaticamente (sem validação manual)"
+    ]
+  },
+  "ui_binding": {
+    "tela": "Fluxo de Reserva — Envio do Comprovante",
+    "componente_gatilho": "ÁreaDeUpload + BotãoEnviar",
+    "estados_ui": [
+      "aguardando-upload",
+      "arquivo-selecionado",
+      "enviando",
+      "reserva-confirmada",
+      "janela-expirada",
+      "arquivo-invalido",
+      "reserva-nao-encontrada"
+    ],
+    "mapeamento": {
+      "ComprovanteAnexado": {
+        "estado_ui": "enviando",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      },
+      "ReservaConfirmada": {
+        "estado_ui": "reserva-confirmada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      },
+      "ReservaNãoEncontrada": {
+        "estado_ui": "reserva-nao-encontrada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      },
+      "JanelaExpirada": {
+        "estado_ui": "janela-expirada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      },
+      "ArquivoInválido": {
+        "estado_ui": "arquivo-invalido",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      },
+      "ReservaJáConfirmada": {
+        "estado_ui": "reserva-nao-encontrada",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useAnexarComprovante.ts"
+      }
+    }
+  },
+  "validation": {
+    "testes_obrigatorios": [
+      "caminho feliz: enviar JPG válido dentro da janela → ComprovanteAnexado + ReservaConfirmada",
+      "caminho feliz: enviar PNG válido dentro da janela → ComprovanteAnexado + ReservaConfirmada",
+      "caminho feliz: enviar PDF válido dentro da janela → ComprovanteAnexado + ReservaConfirmada",
+      "falha: enviar após 2h → JanelaExpirada",
+      "falha: reserva_id inexistente → ReservaNãoEncontrada",
+      "falha: arquivo com mime_type inválido (ex: .exe) → ArquivoInválido",
+      "falha: arquivo maior que 10MB → ArquivoInválido",
+      "falha: enviar comprovante em reserva já confirmada → ReservaJáConfirmada",
+      "concorrência: dois uploads simultâneos para a mesma reserva — apenas um ComprovanteAnexado, segundo retorna ReservaJáConfirmada"
+    ],
+    "sensores": [
+      "verificar que status da reserva muda para 'confirmada' atomicamente com o anexo",
+      "verificar que arquivo é armazenado com referência à reserva_id",
+      "verificar que janela_expiracao_at é checada no momento exato do upload"
+    ],
+    "cobertura_minima": 80,
+    "aprovacao": "all tests pass + coverage >= 80%"
+  }
+}

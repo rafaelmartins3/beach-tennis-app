@@ -1,0 +1,115 @@
+{
+  "version": "1.0",
+  "projeto": "Beach Tennis — Agendamento de Quadras",
+  "stack": "React + Vite + Tailwind + Supabase",
+  "tasks": [
+    {
+      "id": "T01",
+      "titulo": "Domínio: consultar-disponibilidade",
+      "agente": "implementador",
+      "contrato": "api-contract-consultar-disponibilidade.json",
+      "status": "done",
+      "dependencias": [],
+      "descricao": "Implementar ConsultarDisponibilidade em src/domain/agenda.ts — calcula slots por data respeitando períodos de operação e status das reservas existentes"
+    },
+    {
+      "id": "T02",
+      "titulo": "Domínio: iniciar-reserva",
+      "agente": "implementador",
+      "contrato": "api-contract-iniciar-reserva.json",
+      "status": "done",
+      "dependencias": ["T01"],
+      "descricao": "Implementar IniciarReserva em src/domain/reservas.ts — cria reserva com status bloqueada e janela de 2h"
+    },
+    {
+      "id": "T03",
+      "titulo": "Domínio: registrar-cliente",
+      "agente": "implementador",
+      "contrato": "api-contract-registrar-cliente.json",
+      "status": "done",
+      "dependencias": [],
+      "descricao": "Implementar RegistrarCliente em src/domain/clientes.ts — upsert por CPF com validação de dígitos verificadores"
+    },
+    {
+      "id": "T04",
+      "titulo": "Domínio: anexar-comprovante",
+      "agente": "implementador",
+      "contrato": "api-contract-anexar-comprovante.json",
+      "status": "done",
+      "dependencias": ["T02", "T03"],
+      "descricao": "Implementar AnexarComprovante em src/domain/reservas.ts — upload para Supabase Storage + confirma reserva automaticamente"
+    },
+    {
+      "id": "T05",
+      "titulo": "Domínio: liberar-quadra (expiração automática)",
+      "agente": "implementador",
+      "contrato": "api-contract-liberar-quadra.json",
+      "status": "done",
+      "dependencias": ["T02"],
+      "descricao": "Implementar função expirar_reservas via Supabase Edge Function + pg_cron — expira reservas bloqueadas após 2h"
+    },
+    {
+      "id": "T06",
+      "titulo": "UI: Tela Agenda do Dia",
+      "agente": "ux-ui",
+      "contrato": "api-contract-consultar-disponibilidade.json",
+      "status": "done",
+      "dependencias": [],
+      "descricao": "Implementar src/ui/AgendaPage.tsx — grade de horários com SeletorDeData, GradeDeHorários, estados e legenda"
+    },
+    {
+      "id": "T07",
+      "titulo": "UI: Fluxo de Reserva (CPF → Contato → Comprovante → Confirmação)",
+      "agente": "ux-ui",
+      "contrato": "api-contract-registrar-cliente.json",
+      "status": "done",
+      "dependencias": ["T06"],
+      "descricao": "Implementar src/ui/ReservaFlow.tsx — fluxo multi-step com CampoCPF, DadosContato, AreaUpload, telas de sucesso e expiração"
+    },
+    {
+      "id": "T08",
+      "titulo": "UI: Painel Admin",
+      "agente": "ux-ui",
+      "contrato": "api-contract-consultar-disponibilidade.json",
+      "status": "done",
+      "dependencias": ["T06"],
+      "descricao": "Implementar src/ui/AdminPage.tsx — tabela de agendamentos do dia com filtro por quadra e visualização de comprovantes"
+    },
+    {
+      "id": "T09",
+      "titulo": "Integração: agenda ↔ domínio",
+      "agente": "integrador",
+      "contrato": "api-contract-consultar-disponibilidade.json",
+      "status": "done",
+      "dependencias": ["T01", "T06"],
+      "descricao": "Conectar AgendaPage ao ConsultarDisponibilidade via TanStack Query em src/integration/agendaIntegration.ts"
+    },
+    {
+      "id": "T10",
+      "titulo": "Integração: fluxo de reserva ↔ domínio",
+      "agente": "integrador",
+      "contrato": "api-contract-iniciar-reserva.json",
+      "status": "done",
+      "dependencias": ["T02", "T03", "T04", "T07"],
+      "descricao": "Conectar ReservaFlow aos comandos IniciarReserva, RegistrarCliente e AnexarComprovante em src/integration/reservaIntegration.ts"
+    },
+    {
+      "id": "T11",
+      "titulo": "Integração: admin ↔ domínio",
+      "agente": "integrador",
+      "contrato": "api-contract-consultar-disponibilidade.json",
+      "status": "done",
+      "dependencias": ["T01", "T08"],
+      "descricao": "Conectar AdminPage à consulta de reservas do dia com realtime via Supabase em src/integration/adminIntegration.ts"
+    },
+    {
+      "id": "T12",
+      "titulo": "QA: validação final",
+      "agente": "qa",
+      "contrato": null,
+      "status": "done",
+      "dependencias": ["T09", "T10", "T11"],
+      "descricao": "Rodar testes, verificar cobertura >= 80%, confirmar todos os mapeamentos implemented:true nos contratos"
+    }
+  ]
+}

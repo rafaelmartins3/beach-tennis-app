@@ -1,0 +1,52 @@
+{
+  "feature": "beach-tennis-agendamento (all features)",
+  "aprovado": false,
+  "timestamp": "2025-05-24T00:32:00Z",
+  "camadas": {
+    "sensores": {
+      "status": "reprovado",
+      "detalhes": {
+        "type_checker": "3 erros em tests/reservas/anexar-comprovante.test.ts",
+        "erros": [
+          "TS6133: 'vi' is declared but its value is never read (line 1)",
+          "TS2339: Property 'motivo' does not exist on type 'ErroDominio' (line 100) — type narrowing necessário para ArquivoInválido",
+          "TS2339: Property 'motivo' does not exist on type 'ErroDominio' (line 112) — type narrowing necessário para ArquivoInválido"
+        ],
+        "linter": "não configurado (eslint/prettier ausente — não bloqueia)",
+        "formatter": "não configurado — não bloqueia"
+      },
+      "cobertura": "98.18% statements / 94.56% branch / 94.11% funcs — ACIMA DO MÍNIMO (80%)"
+    },
+    "contrato": {
+      "status": "aprovado",
+      "detalhes": {
+        "mapeamentos_total": 17,
+        "mapeamentos_implementados": 17,
+        "pendentes": []
+      }
+    },
+    "testes_dominio": {
+      "status": "aprovado",
+      "detalhes": {
+        "total": 41,
+        "passando": 41,
+        "falhando": 0,
+        "falhas": [],
+        "arquivos": [
+          "tests/agenda/consultar-disponibilidade.test.ts — 7/7",
+          "tests/clientes/registrar-cliente.test.ts — 8/8",
+          "tests/reservas/iniciar-reserva.test.ts — 8/8",
+          "tests/reservas/liberar-quadra.test.ts — 8/8",
+          "tests/reservas/anexar-comprovante.test.ts — 10/10"
+        ]
+      }
+    }
+  },
+  "acao": "rejeitar",
+  "motivo": "TypeScript reporta 3 erros de tipo em tests/reservas/anexar-comprovante.test.ts. Os erros são causados pela union type ErroDominio em src/domain/types.ts não ser narrowável fora de um discriminated union guard. O campo 'motivo' só existe no variant ArquivoInválido mas o tipo não é acessível diretamente sem narrowing. Fix: adicionar 'motivo' como campo opcional nos tipos de ErroDominio que possam tê-lo, ou exportar um type guard. O import 'vi' não utilizado é menor e pode ser removido da análise se necessário.",
+  "retornar_para": "implementador",
+  "fix_sugerido": {
+    "arquivo": "src/domain/types.ts",
+    "acao": "Adicionar 'motivo?: string' como campo opcional à union ErroDominio para permitir acesso direto sem narrowing estrito, OU exportar type guard 'isArquivoInvalido(e: ErroDominio): e is { code: ARQUIVO_INVALIDO; motivo: ... }'"
+  }
+}

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beach Arena — Agendamento</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --green-dark: #1B4332;
+    --green-mid: #2D6A4F;
+    --green-light: #D1FAE5;
+    --amber: #F59E0B;
+    --amber-light: #FEF3C7;
+    --red: #EF4444;
+    --red-light: #FEE2E2;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-400: #9CA3AF;
+    --gray-600: #4B5563;
+    --gray-800: #1F2937;
+    --white: #ffffff;
+    --max-w: 480px;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--gray-100);
+    color: var(--gray-800);
+    min-height: 100vh;
+  }
+
+  /* ── DEV NAV (só para preview) ── */
+  .dev-nav {
+    background: #111; border-bottom: 1px solid #333;
+    display: flex; gap: 4px; padding: 8px 16px; overflow-x: auto;
+    position: sticky; top: 0; z-index: 200;
+  }
+  .dev-nav a {
+    color: #aaa; text-decoration: none; font-size: 11px; font-weight: 500;
+    padding: 5px 10px; border-radius: 6px; white-space: nowrap;
+  }
+  .dev-nav a:hover { background: #222; color: #fff; }
+  .dev-nav a.active { background: var(--green-dark); color: #fff; }
+  .dev-label {
+    font-size: 10px; font-weight: 700; letter-spacing:.08em; text-transform:uppercase;
+    color: #555; padding: 5px 10px; display:flex; align-items:center;
+  }
+
+  /* ── SITE SHELL ── */
+  .site { max-width: var(--max-w); margin: 0 auto; background: var(--white); min-height: 100vh; }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--green-dark); padding: 16px 20px;
+    display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 36px; z-index: 100;
+  }
+  .site-header .logo {
+    width: 38px; height: 38px; background: var(--amber); border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+    flex-shrink: 0;
+  }
+  .site-header .brand h1 { color: #fff; font-size: 17px; font-weight: 700; line-height: 1.2; }
+  .site-header .brand p { color: #86EFAC; font-size: 12px; }
+  .site-header .admin-badge {
+    margin-left: auto; background: var(--amber); color: #000;
+    font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 20px;
+  }
+
+  /* ── DATE BAR ── */
+  .date-bar {
+    background: var(--green-mid); padding: 10px 16px;
+    display: flex; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  }
+  .date-bar::-webkit-scrollbar { display: none; }
+  .day-chip {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 8px 10px; border-radius: 10px; cursor: pointer;
+    min-width: 48px; flex-shrink: 0; transition: all .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .day-chip .dn { font-size: 10px; color: #86EFAC; font-weight: 600; }
+  .day-chip .dd { font-size: 17px; font-weight: 700; color: #fff; margin-top: 1px; }
+  .day-chip.active { background: var(--amber); border-radius: 12px; }
+  .day-chip.active .dn { color: #78350F; }
+  .day-chip.active .dd { color: #000; }
+  .day-chip.disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── GRID ── */
+  .grid-section { padding: 16px; }
+  .grid-head {
+    display: grid; grid-template-columns: 48px 1fr 1fr 1fr;
+    gap: 4px; margin-bottom: 6px;
+  }
+  .grid-head span {
+    font-size: 11px; font-weight: 700; color: var(--gray-600);
+    text-align: center; padding: 4px 0;
+  }
+  .grid-row {
+    display: grid; grid-template-columns: 48px 1fr 1fr 1fr;
+    gap: 4px; margin-bottom: 4px;
+  }
+  .grid-time {
+    font-size: 11px; color: var(--gray-400);
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 6px; font-weight: 500;
+  }
+  .slot {
+    height: 40px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .slot:active { opacity: .75; }
+  .slot.free { background: var(--green-light); color: var(--green-dark); }
+  .slot.pend { background: var(--amber-light); color: #92400E; }
+  .slot.conf { background: var(--red-light); color: #991B1B; }
+  .slot.off  { background: var(--gray-200); color: var(--gray-400); cursor: default; font-size: 14px; }
+  .slot.off:active { opacity: 1; }
+
+  .legend {
+    display: flex; gap: 12px; flex-wrap: wrap; padding: 12px 16px;
+    border-top: 1px solid var(--gray-200);
+  }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--gray-600); }
+  .leg-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
+  /* ── PAGE (content area) ── */
+  .page { padding: 24px 20px; }
+
+  /* ── BOOKING SUMMARY ── */
+  .booking-chip {
+    background: var(--green-light); border-radius: 12px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+    margin-bottom: 24px;
+  }
+  .booking-chip .icon { font-size: 22px; }
+  .booking-chip strong { font-size: 14px; color: var(--green-dark); font-weight: 700; display: block; }
+  .booking-chip span { font-size: 12px; color: var(--green-mid); }
+
+  /* ── FORM ── */
+  .form-field { margin-bottom: 18px; }
+  .form-field label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 7px; }
+  .form-field input {
+    width: 100%; padding: 14px 16px; border: 2px solid var(--gray-200);
+    border-radius: 12px; font-size: 16px; color: var(--gray-800);
+    outline: none; transition: border-color .2s;
+    -webkit-appearance: none; appearance: none;
+  }
+  .form-field input:focus { border-color: var(--green-dark); }
+  .form-field input.ok  { border-color: #22C55E; }
+  .form-field input.err { border-color: var(--red); }
+  .hint { font-size: 12px; margin-top: 6px; }
+  .hint.ok  { color: #16A34A; }
+  .hint.err { color: var(--red); }
+  .hint.sub { color: var(--gray-400); }
+
+  /* ── BUTTON ── */
+  .btn {
+    display: block; width: 100%; padding: 16px;
+    border: none; border-radius: 14px; font-size: 16px; font-weight: 700;
+    cursor: pointer; transition: opacity .15s; text-align: center;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { opacity: .85; }
+  .btn-primary { background: var(--green-dark); color: #fff; }
+  .btn-amber   { background: var(--amber); color: #000; }
+  .btn-ghost   { background: var(--gray-100); color: var(--gray-800); }
+  .btn:disabled { background: var(--gray-200); color: var(--gray-400); cursor: not-allowed; }
+  .btn-sm { padding: 10px 16px; font-size: 13px; border-radius: 10px; }
+
+  /* ── COUNTDOWN ── */
+  .countdown {
+    background: var(--amber-light); border: 2px solid var(--amber);
+    border-radius: 14px; padding: 16px; margin-bottom: 18px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .countdown .timer { font-size: 32px; font-weight: 800; color: #92400E; letter-spacing: .04em; }
+  .countdown .clabel { font-size: 12px; color: #B45309; margin-bottom: 2px; }
+
+  /* ── PIX BOX ── */
+  .pix-box {
+    background: var(--gray-100); border-radius: 12px;
+    padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+  }
+  .pix-box .pk { flex: 1; }
+  .pix-box .pk small { font-size: 11px; color: var(--gray-400); display: block; margin-bottom: 2px; }
+  .pix-box .pk strong { font-size: 14px; color: var(--gray-800); }
+  .copy-btn {
+    background: var(--green-dark); color: #fff; border: none;
+    padding: 9px 14px; border-radius: 9px; font-size: 12px; font-weight: 700;
+    cursor: pointer; flex-shrink: 0;
+  }
+
+  /* ── UPLOAD ── */
+  .upload {
+    border: 2px dashed var(--gray-300, #D1D5DB); border-radius: 14px;
+    padding: 32px 20px; text-align: center; cursor: pointer;
+    margin-bottom: 18px; transition: all .2s;
+  }
+  .upload:hover, .upload.drag { border-color: var(--green-dark); background: var(--green-light); }
+  .upload.done { border-color: #22C55E; background: #F0FFF4; border-style: solid; }
+  .upload .uicon { font-size: 36px; margin-bottom: 10px; }
+  .upload .utxt { font-size: 14px; color: var(--gray-600); font-weight: 500; }
+  .upload .usub { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+  .upload .ufn  { font-size: 13px; color: #16A34A; font-weight: 600; margin-top: 6px; }
+
+  /* ── SUCCESS ── */
+  .success-pg {
+    min-height: calc(100vh - 70px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 32px 20px;
+    background: linear-gradient(160deg, #ECFDF5 0%, #D1FAE5 100%);
+  }
+  .success-pg .sicon { font-size: 72px; margin-bottom: 18px; }
+  .success-pg h2 { font-size: 24px; font-weight: 800; color: var(--green-dark); margin-bottom: 8px; text-align: center; }
+  .success-pg p { font-size: 14px; color: var(--green-mid); text-align: center; line-height: 1.6; margin-bottom: 28px; }
+  .success-card {
+    width: 100%; background: #fff; border-radius: 16px; padding: 18px;
+    margin-bottom: 24px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  }
+  .srow {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--gray-100);
+    font-size: 14px;
+  }
+  .srow:last-child { border-bottom: none; }
+  .srow .slabel { color: var(--gray-400); }
+  .srow .sval   { font-weight: 600; }
+
+  /* ── EXPIRED ── */
+  .expired-pg {
+    min-height: calc(100vh - 70px); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 32px 20px;
+    background: #FFFBEB; text-align: center;
+  }
+  .expired-pg .eicon { font-size: 64px; margin-bottom: 16px; }
+  .expired-pg h2 { font-size: 22px; font-weight: 800; color: #92400E; margin-bottom: 10px; }
+  .expired-pg p { font-size: 14px; color: #B45309; line-height: 1.6; margin-bottom: 28px; }
+
+  /* ── ADMIN ── */
+  .filter-bar {
+    display: flex; gap: 6px; padding: 12px 16px;
+    overflow-x: auto; -webkit-overflow-scrolling: touch; border-bottom: 1px solid var(--gray-200);
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .fchip {
+    padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    cursor: pointer; border: 2px solid transparent; white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .fchip.on  { background: var(--green-dark); color: #fff; }
+  .fchip.off { background: var(--gray-100); color: var(--gray-600); }
+
+  .bk-list { padding: 12px 16px; }
+  .bk-card {
+    border: 1px solid var(--gray-200); border-radius: 14px;
+    background: #fff; margin-bottom: 10px; overflow: hidden;
+  }
+  .bk-row {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  }
+  .bk-time { font-size: 13px; font-weight: 700; min-width: 72px; color: var(--gray-800); }
+  .bk-info { flex: 1; }
+  .bk-name { font-size: 14px; font-weight: 600; }
+  .bk-cpf  { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 4px 9px; border-radius: 20px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .badge-conf { background: var(--red-light);   color: #991B1B; }
+  .badge-pend { background: var(--amber-light); color: #92400E; }
+  .thumb {
+    width: 38px; height: 38px; border-radius: 10px; background: var(--gray-100);
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    flex-shrink: 0;
+  }
+  .empty-row {
+    background: var(--gray-100); border-radius: 12px; margin-bottom: 10px;
+    padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  }
+  .empty-row .et { font-size: 13px; font-weight: 600; color: var(--gray-400); min-width: 72px; }
+  .empty-row .el { font-size: 12px; color: var(--gray-400); }
+
+  /* ── DIVIDER ── */
+  .screen-divider {
+    background: #e0e0e0; text-align: center; padding: 14px;
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: #999; position: sticky; top: 36px; z-index: 50;
+  }
+
+  @media (min-width: 520px) {
+    .site { box-shadow: 0 0 40px rgba(0,0,0,.1); margin-top: 0; }
+    body { background: #e8e8e8; }
+    .dev-nav { justify-content: center; }
+    .site-header { top: 45px; }
+    .screen-divider { top: 45px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- DEV NAV -->
+<nav class="dev-nav">
+  <span class="dev-label">Preview →</span>
+  <a href="#s1" class="active">Agenda</a>
+  <a href="#s2">CPF</a>
+  <a href="#s3">Contato</a>
+  <a href="#s4a">Comprovante</a>
+  <a href="#s5">Confirmado</a>
+  <a href="#s6">Expirado</a>
+  <a href="#s7">Admin</a>
+</nav>
+
+<div class="site">
+
+  <!-- ══════════════════════════════════
+       TELA 1 — AGENDA DO DIA
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s1">① Agenda do dia</div>
+
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand">
+      <h1>Beach Arena</h1>
+      <p>Escolha seu horário</p>
+    </div>
+  </header>
+
+  <nav class="date-bar">
+    <div class="day-chip disabled"><span class="dn">DOM</span><span class="dd">18</span></div>
+    <div class="day-chip"><span class="dn">SEG</span><span class="dd">19</span></div>
+    <div class="day-chip"><span class="dn">TER</span><span class="dd">20</span></div>
+    <div class="day-chip active"><span class="dn">QUA</span><span class="dd">21</span></div>
+    <div class="day-chip"><span class="dn">QUI</span><span class="dd">22</span></div>
+    <div class="day-chip"><span class="dn">SEX</span><span class="dd">23</span></div>
+    <div class="day-chip"><span class="dn">SÁB</span><span class="dd">24</span></div>
+  </nav>
+
+  <div class="grid-section">
+    <div class="grid-head">
+      <span></span><span>Quadra 1</span><span>Quadra 2</span><span>Quadra 3</span>
+    </div>
+    <div class="grid-row"><div class="grid-time">07h</div><div class="slot off">—</div><div class="slot off">—</div><div class="slot off">—</div></div>
+    <div class="grid-row"><div class="grid-time">08h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot conf">✓</div></div>
+    <div class="grid-row"><div class="grid-time">09h</div><div class="slot free">livre</div><div class="slot pend">⏱</div><div class="slot conf">✓</div></div>
+    <div class="grid-row"><div class="grid-time">10h</div><div class="slot conf">✓</div><div class="slot free">livre</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">11h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot pend">⏱</div></div>
+    <div class="grid-row"><div class="grid-time">12h</div><div class="slot off">—</div><div class="slot off">—</div><div class="slot off">—</div></div>
+    <div class="grid-row"><div class="grid-time">13h</div><div class="slot off">—</div><div class="slot off">—</div><div class="slot off">—</div></div>
+    <div class="grid-row"><div class="grid-time">14h</div><div class="slot free">livre</div><div class="slot conf">✓</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">15h</div><div class="slot pend">⏱</div><div class="slot free">livre</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">16h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot conf">✓</div></div>
+    <div class="grid-row"><div class="grid-time">17h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">18h</div><div class="slot conf">✓</div><div class="slot free">livre</div><div class="slot pend">⏱</div></div>
+    <div class="grid-row"><div class="grid-time">19h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">20h</div><div class="slot free">livre</div><div class="slot conf">✓</div><div class="slot free">livre</div></div>
+    <div class="grid-row"><div class="grid-time">21h</div><div class="slot free">livre</div><div class="slot free">livre</div><div class="slot free">livre</div></div>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="leg-dot" style="background:#D1FAE5;border:1px solid #6EE7B7"></div>Disponível</div>
+    <div class="leg"><div class="leg-dot" style="background:#FEF3C7;border:1px solid #FCD34D"></div>Aguardando pagamento</div>
+    <div class="leg"><div class="leg-dot" style="background:#FEE2E2;border:1px solid #FCA5A5"></div>Confirmado</div>
+    <div class="leg"><div class="leg-dot" style="background:#E5E7EB"></div>Fechado</div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 2 — IDENTIFICAÇÃO CPF
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s2">② Identificação por CPF</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>Identificação</p></div>
+  </header>
+  <div class="page">
+    <div class="booking-chip">
+      <div class="icon">🏟️</div>
+      <div>
+        <strong>Quadra 2 · Quarta, 21/05</strong>
+        <span>09h00 – 10h00</span>
+      </div>
+    </div>
+    <p style="font-size:14px;font-weight:600;color:var(--gray-800);margin-bottom:18px;">Informe seu CPF para continuar</p>
+    <div class="form-field">
+      <label>CPF</label>
+      <input type="text" class="ok" value="123.456.789-09" readonly>
+      <p class="hint ok">✓ Bem-vindo de volta, Rafael!</p>
+    </div>
+    <p class="hint sub" style="text-align:center;margin:20px 0 16px;">Não guardamos senhas. Só precisamos do CPF.</p>
+    <button class="btn btn-primary">Continuar</button>
+
+    <!-- estado erro -->
+    <div style="margin-top:32px;padding-top:24px;border-top:1px dashed var(--gray-200);">
+      <p style="font-size:11px;color:var(--gray-400);margin-bottom:16px;text-align:center;">Estado: CPF inválido</p>
+      <div class="form-field">
+        <label>CPF</label>
+        <input type="text" class="err" value="111.111.111-11" readonly>
+        <p class="hint err">⚠ CPF inválido. Verifique e tente novamente.</p>
+      </div>
+      <button class="btn btn-primary" disabled>Continuar</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 3 — DADOS DE CONTATO
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s3">③ Dados de Contato</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>Seus dados</p></div>
+  </header>
+  <div class="page">
+    <div class="booking-chip">
+      <div class="icon">🏟️</div>
+      <div>
+        <strong>Quadra 2 · Quarta, 21/05</strong>
+        <span>09h00 – 10h00</span>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--gray-600);margin-bottom:20px;">Primeira vez aqui! Informe seus dados para continuar.</p>
+    <div class="form-field">
+      <label>Nome completo</label>
+      <input type="text" class="ok" value="Rafael Martins" readonly>
+    </div>
+    <div class="form-field">
+      <label>Telefone</label>
+      <input type="text" class="ok" value="(11) 99999-8888" readonly>
+    </div>
+    <button class="btn btn-primary" style="margin-top:8px;">Confirmar dados</button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 4A — COMPROVANTE (vazio)
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s4a">④ Envio do Comprovante — aguardando</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>Confirme o pagamento</p></div>
+  </header>
+  <div class="page">
+    <div class="booking-chip">
+      <div class="icon">🏟️</div>
+      <div>
+        <strong>Quadra 2 · Quarta, 21/05</strong>
+        <span>09h00 – 10h00 · Rafael Martins</span>
+      </div>
+    </div>
+    <div class="countdown">
+      <div>
+        <div class="clabel">Prazo para enviar o comprovante</div>
+        <div class="timer" id="timer1">2:00:00</div>
+      </div>
+      <span style="font-size:36px;margin-left:auto;">⏱</span>
+    </div>
+    <div class="pix-box">
+      <div class="pk">
+        <small>Chave Pix do estabelecimento</small>
+        <strong>beach.arena@pix.com.br</strong>
+      </div>
+      <button class="copy-btn" onclick="copyPix(this)">Copiar</button>
+    </div>
+    <div class="upload">
+      <div class="uicon">📤</div>
+      <div class="utxt">Toque para anexar o comprovante</div>
+      <div class="usub">JPG, PNG ou PDF · máx. 10 MB</div>
+    </div>
+    <button class="btn btn-primary" disabled>Enviar comprovante</button>
+  </div>
+
+  <!-- TELA 4B — COMPROVANTE (com arquivo) -->
+  <div style="padding:12px 16px;background:var(--gray-100);border-top:1px dashed var(--gray-300);border-bottom:1px dashed var(--gray-300);">
+    <p style="font-size:11px;color:var(--gray-400);text-align:center;">Estado: arquivo selecionado</p>
+  </div>
+  <div class="page" style="padding-top:16px;">
+    <div class="booking-chip">
+      <div class="icon">🏟️</div>
+      <div>
+        <strong>Quadra 2 · Quarta, 21/05</strong>
+        <span>09h00 – 10h00 · Rafael Martins</span>
+      </div>
+    </div>
+    <div class="countdown">
+      <div>
+        <div class="clabel">Prazo para enviar o comprovante</div>
+        <div class="timer" id="timer2">1:47:22</div>
+      </div>
+      <span style="font-size:36px;margin-left:auto;">⏱</span>
+    </div>
+    <div class="pix-box">
+      <div class="pk">
+        <small>Chave Pix do estabelecimento</small>
+        <strong>beach.arena@pix.com.br</strong>
+      </div>
+      <button class="copy-btn" onclick="copyPix(this)">Copiar</button>
+    </div>
+    <div class="upload done">
+      <div class="uicon">📎</div>
+      <div class="utxt">Comprovante selecionado</div>
+      <div class="ufn">comprovante_pix.pdf · 142 KB</div>
+    </div>
+    <button class="btn btn-primary">Enviar comprovante</button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 5 — CONFIRMAÇÃO
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s5">⑤ Reserva Confirmada</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>&nbsp;</p></div>
+  </header>
+  <div class="success-pg">
+    <div class="sicon">🎉</div>
+    <h2>Reserva confirmada!</h2>
+    <p>Seu horário está garantido.<br>Te esperamos na quadra!</p>
+    <div class="success-card">
+      <div class="srow"><span class="slabel">Quadra</span><span class="sval">Quadra 2</span></div>
+      <div class="srow"><span class="slabel">Data</span><span class="sval">Quarta, 21/05/2025</span></div>
+      <div class="srow"><span class="slabel">Horário</span><span class="sval">09h00 – 10h00</span></div>
+      <div class="srow"><span class="slabel">Cliente</span><span class="sval">Rafael Martins</span></div>
+      <div class="srow"><span class="slabel">Status</span><span class="sval" style="color:#16A34A;">✓ Confirmado</span></div>
+    </div>
+    <button class="btn btn-primary" style="width:100%;">Fazer nova reserva</button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 6 — EXPIRADO
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s6">⑥ Janela Expirada</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>&nbsp;</p></div>
+  </header>
+  <div class="expired-pg">
+    <div class="eicon">⏰</div>
+    <h2>Tempo esgotado</h2>
+    <p>O prazo de 2 horas para enviar o comprovante encerrou. Sua reserva foi cancelada e a quadra está disponível novamente.</p>
+    <button class="btn btn-amber" style="width:100%;margin-bottom:10px;">Tentar nova reserva</button>
+    <button class="btn btn-ghost" style="width:100%;">Voltar ao início</button>
+  </div>
+
+  <!-- ══════════════════════════════════
+       TELA 7 — ADMIN
+  ══════════════════════════════════ -->
+  <div class="screen-divider" id="s7">⑦ Painel do Administrador</div>
+  <header class="site-header">
+    <div class="logo">🎾</div>
+    <div class="brand"><h1>Beach Arena</h1><p>Agenda do dia</p></div>
+    <div class="admin-badge">ADMIN</div>
+  </header>
+  <nav class="date-bar">
+    <div class="day-chip disabled"><span class="dn">DOM</span><span class="dd">18</span></div>
+    <div class="day-chip"><span class="dn">SEG</span><span class="dd">19</span></div>
+    <div class="day-chip"><span class="dn">TER</span><span class="dd">20</span></div>
+    <div class="day-chip active"><span class="dn">QUA</span><span class="dd">21</span></div>
+    <div class="day-chip"><span class="dn">QUI</span><span class="dd">22</span></div>
+    <div class="day-chip"><span class="dn">SEX</span><span class="dd">23</span></div>
+    <div class="day-chip"><span class="dn">SÁB</span><span class="dd">24</span></div>
+  </nav>
+  <div class="filter-bar">
+    <div class="fchip on">Todas as quadras</div>
+    <div class="fchip off">Quadra 1</div>
+    <div class="fchip off">Quadra 2</div>
+    <div class="fchip off">Quadra 3</div>
+  </div>
+  <div class="bk-list">
+    <div class="bk-card">
+      <div class="bk-row">
+        <div class="bk-time">08h · Q1</div>
+        <div class="bk-info"><div class="bk-name">Carlos Souza</div><div class="bk-cpf">987.654.321-00</div></div>
+        <span class="badge badge-conf">Confirmado</span>
+        <div class="thumb">🧾</div>
+      </div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-row">
+        <div class="bk-time">09h · Q2</div>
+        <div class="bk-info"><div class="bk-name">Rafael Martins</div><div class="bk-cpf">123.456.789-09</div></div>
+        <span class="badge badge-pend">Ag. pagto</span>
+        <div class="thumb" style="background:#FEF3C7;">⏱</div>
+      </div>
+    </div>
+    <div class="empty-row">
+      <div class="et">09h · Q1</div><div class="el">Disponível</div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-row">
+        <div class="bk-time">10h · Q3</div>
+        <div class="bk-info"><div class="bk-name">Ana Lima</div><div class="bk-cpf">111.222.333-44</div></div>
+        <span class="badge badge-conf">Confirmado</span>
+        <div class="thumb">🧾</div>
+      </div>
+    </div>
+    <div class="empty-row">
+      <div class="et">11h · Q1</div><div class="el">Disponível</div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-row">
+        <div class="bk-time">14h · Q2</div>
+        <div class="bk-info"><div class="bk-name">Bruno Neves</div><div class="bk-cpf">555.666.777-88</div></div>
+        <span class="badge badge-pend">Ag. pagto</span>
+        <div class="thumb" style="background:#FEF3C7;">⏱</div>
+      </div>
+    </div>
+    <div class="empty-row">
+      <div class="et">15h · Q1</div><div class="el">Disponível</div>
+    </div>
+    <div class="bk-card">
+      <div class="bk-row">
+        <div class="bk-time">16h · Q3</div>
+        <div class="bk-info"><div class="bk-name">Fernanda Costa</div><div class="bk-cpf">222.333.444-55</div></div>
+        <span class="badge badge-conf">Confirmado</span>
+        <div class="thumb">🧾</div>
+      </div>
+    </div>
+    <div class="empty-row">
+      <div class="et">17h · Q2</div><div class="el">Disponível</div>
+    </div>
+    <div class="empty-row">
+      <div class="et">18h · Q1</div><div class="el">Disponível</div>
+    </div>
+  </div>
+
+</div><!-- /site -->
+
+<script>
+  // ── Nav highlight ──
+  const ids = ['s1','s2','s3','s4a','s5','s6','s7'];
+  const links = document.querySelectorAll('.dev-nav a');
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`.dev-nav a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  ids.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+  links.forEach(l => l.addEventListener('click', e => {
+    e.preventDefault();
+    document.querySelector(l.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+  }));
+
+  // ── Countdown ──
+  let s1 = 7200, s2 = 6442;
+  setInterval(() => {
+    [s1, s2].forEach((s, i) => {
+      const el = document.getElementById('timer' + (i+1));
+      if (!el) return;
+      const val = Math.max(0, s - Math.floor((Date.now() - startTs) / 1000));
+      const h = Math.floor(val/3600);
+      const m = String(Math.floor((val%3600)/60)).padStart(2,'0');
+      const sec = String(val%60).padStart(2,'0');
+      el.textContent = `${h}:${m}:${sec}`;
+    });
+  }, 1000);
+  const startTs = Date.now();
+
+  // ── Copy Pix ──
+  function copyPix(btn) {
+    navigator.clipboard?.writeText('beach.arena@pix.com.br');
+    btn.textContent = '✓ Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  }
+
+  // ── Slot click ──
+  document.querySelectorAll('.slot.free').forEach(slot => {
+    slot.addEventListener('click', () => {
+      document.getElementById('s2').scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>

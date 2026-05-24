@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "feature": "consultar-disponibilidade",
+  "bounded_context": "Agenda",
+  "domain": {
+    "comando": "ConsultarDisponibilidade",
+    "entrada": {
+      "data": "date",
+      "quadra_id": "integer | null"
+    },
+    "sucesso": "DisponibilidadeConsultada",
+    "falhas": ["HorárioForaDeOperação"],
+    "regras": [
+      "Domingo: nenhum slot disponível",
+      "Segunda a Sexta: slots disponíveis apenas de 08h-11h e 14h-22h",
+      "Sábado: slots disponíveis apenas de 07h-12h",
+      "Slots bloqueados ou confirmados devem aparecer como indisponíveis"
+    ]
+  },
+  "ui_binding": {
+    "tela": "Agenda do Dia",
+    "componente_gatilho": "SeletorDeData",
+    "estados_ui": ["disponível", "bloqueado", "confirmado", "fora-de-operação", "carregando"],
+    "mapeamento": {
+      "DisponibilidadeConsultada": {
+        "estado_ui": "disponível",
+        "implemented": true,
+        "arquivo": "src/integration/agenda/useConsultarDisponibilidade.ts"
+      },
+      "HorárioForaDeOperação": {
+        "estado_ui": "fora-de-operação",
+        "implemented": true,
+        "arquivo": "src/integration/agenda/useConsultarDisponibilidade.ts"
+      }
+    }
+  },
+  "validation": {
+    "testes_obrigatorios": [
+      "caminho feliz: consultar data válida de segunda a sexta retorna slots das 08h-11h e 14h-22h",
+      "caminho feliz: consultar sábado retorna slots das 07h-12h",
+      "falha: consultar domingo retorna HorárioForaDeOperação para todos os slots",
+      "falha: consultar horário fora dos períodos retorna HorárioForaDeOperação",
+      "concorrência: dois clientes consultam o mesmo horário simultaneamente — ambos recebem estado correto sem inconsistência"
+    ],
+    "sensores": [
+      "verificar constraint: nenhum slot fora dos períodos de operação retorna 'disponível'",
+      "verificar constraint: domingos sempre retornam lista vazia"
+    ],
+    "cobertura_minima": 80,
+    "aprovacao": "all tests pass + coverage >= 80%"
+  }
+}

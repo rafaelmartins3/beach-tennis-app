@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "feature": "registrar-cliente",
+  "bounded_context": "Clientes",
+  "domain": {
+    "comando": "RegistrarCliente",
+    "entrada": {
+      "cpf": "string",
+      "nome": "string | null",
+      "telefone": "string | null"
+    },
+    "sucesso": "ClienteRegistrado | ClienteLocalizado",
+    "falhas": ["CPFInválido"],
+    "regras": [
+      "CPF deve ser válido (formato e dígitos verificadores)",
+      "Se CPF já existe → ClienteLocalizado (sem alterar dados existentes)",
+      "Se CPF não existe → nome e telefone obrigatórios → ClienteRegistrado",
+      "CPF é o único identificador — não há senha ou login"
+    ]
+  },
+  "ui_binding": {
+    "tela": "Fluxo de Reserva — Identificação / Dados de Contato",
+    "componente_gatilho": "CampoCPF + BotãoContinuar",
+    "estados_ui": ["cpf-válido", "cpf-inválido", "carregando"],
+    "mapeamento": {
+      "ClienteLocalizado": {
+        "estado_ui": "cpf-valido",
+        "implemented": true,
+        "arquivo": "src/integration/clientes/useRegistrarCliente.ts"
+      },
+      "ClienteRegistrado": {
+        "estado_ui": "cpf-valido",
+        "implemented": true,
+        "arquivo": "src/integration/clientes/useRegistrarCliente.ts"
+      },
+      "CPFInválido": {
+        "estado_ui": "cpf-invalido",
+        "implemented": true,
+        "arquivo": "src/integration/clientes/useRegistrarCliente.ts"
+      }
+    }
+  },
+  "validation": {
+    "testes_obrigatorios": [
+      "caminho feliz: CPF válido já cadastrado retorna ClienteLocalizado com dados do cliente",
+      "caminho feliz: CPF válido novo com nome e telefone retorna ClienteRegistrado",
+      "falha: CPF com formato inválido (ex: 111.111.111-11) retorna CPFInválido",
+      "falha: CPF novo sem nome/telefone retorna erro de campo obrigatório",
+      "concorrência: mesmo CPF cadastrado simultaneamente por duas requisições — apenas um ClienteRegistrado, segundo retorna ClienteLocalizado"
+    ],
+    "sensores": [
+      "verificar constraint de unicidade no campo CPF",
+      "verificar que ClienteLocalizado não sobrescreve nome/telefone existentes"
+    ],
+    "cobertura_minima": 80,
+    "aprovacao": "all tests pass + coverage >= 80%"
+  }
+}

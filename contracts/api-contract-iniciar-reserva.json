@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "feature": "iniciar-reserva",
+  "bounded_context": "Reservas",
+  "domain": {
+    "comando": "IniciarReserva",
+    "entrada": {
+      "quadra_id": "integer",
+      "data": "date",
+      "horario_inicio": "time",
+      "cpf_cliente": "string"
+    },
+    "sucesso": "ReservaIniciada",
+    "falhas": ["QuadraNãoDisponível", "HorárioForaDeOperação"],
+    "regras": [
+      "Quadra já bloqueada ou confirmada no horário → QuadraNãoDisponível",
+      "Horário fora dos períodos de operação → HorárioForaDeOperação",
+      "Ao iniciar, o sistema abre automaticamente uma janela de 2 horas para pagamento",
+      "Bloqueio é exclusivo: nenhum outro cliente pode reservar o mesmo slot enquanto bloqueado"
+    ]
+  },
+  "ui_binding": {
+    "tela": "Agenda do Dia → Fluxo de Reserva",
+    "componente_gatilho": "GradeDeHorários (slot disponível)",
+    "estados_ui": ["bloqueado", "aguardando-upload"],
+    "mapeamento": {
+      "ReservaIniciada": {
+        "estado_ui": "bloqueado",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useIniciarReserva.ts"
+      },
+      "QuadraNãoDisponível": {
+        "estado_ui": "quadra-indisponivel",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useIniciarReserva.ts"
+      },
+      "HorárioForaDeOperação": {
+        "estado_ui": "fora-operacao",
+        "implemented": true,
+        "arquivo": "src/integration/reservas/useIniciarReserva.ts"
+      }
+    }
+  },
+  "validation": {
+    "testes_obrigatorios": [
+      "caminho feliz: iniciar reserva em slot disponível retorna ReservaIniciada com janela de 2h",
+      "falha: iniciar reserva em slot bloqueado retorna QuadraNãoDisponível",
+      "falha: iniciar reserva em slot confirmado retorna QuadraNãoDisponível",
+      "falha: iniciar reserva fora do horário de operação retorna HorárioForaDeOperação",
+      "concorrência: dois clientes tentam reservar o mesmo slot simultaneamente — apenas um obtém sucesso, o outro recebe QuadraNãoDisponível"
+    ],
+    "sensores": [
+      "verificar constraint de unicidade: (quadra_id, data, horario_inicio) com status ativo",
+      "verificar que janela_expiracao_at = criado_at + 2h é gravado corretamente"
+    ],
+    "cobertura_minima": 80,
+    "aprovacao": "all tests pass + coverage >= 80%"
+  }
+}
