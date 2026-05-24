@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Fundo areia (beach) -->
+  <circle cx="32" cy="32" r="30" fill="#fbbf24" stroke="#d97706" stroke-width="2"/>
+  <!-- Bola de tênis -->
+  <circle cx="32" cy="32" r="18" fill="#d9f99d" stroke="#65a30d" stroke-width="1.5"/>
+  <!-- Costuras da bola (curvas em S características) -->
+  <path d="M 14 32 Q 23 22, 32 32 T 50 32"
+        fill="none" stroke="#65a30d" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M 14 32 Q 23 42, 32 32 T 50 32"
+        fill="none" stroke="#65a30d" stroke-width="1.5" stroke-linecap="round"/>
+</svg>
