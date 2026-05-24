@@ -7,14 +7,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-# Copia o restante do código
+# Copia o restante do código (inclui .env.production que o Vite consome em build)
 COPY . .
-
-# Build args para variáveis de ambiente do Supabase (injetadas em tempo de build)
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 
 RUN npm run build
 
